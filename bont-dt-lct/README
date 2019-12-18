@@ -1,0 +1,16 @@
+#To generate the effector sequence clustering plot. The paths are hard-coded, so you will have to edit each one if you want to replicate.
+
+#To generate the clustering diagram, run the scripts in the following order:
+
+#1. Set directory to the scripts directory. 
+cd /disk2/mmansfield/LCT/Round4/revisions/collection-analysis-stuff/bont-dt-lct/scripts
+
+#2. Cluster at 5% increments from 50% to 100% identity. USEARCH must be installed on your $PATH. 
+bash Cluster_Effectors.sh
+
+#3. Tabulate USEARCH fasta clusters.
+bash Make_Effector_tb.sh
+
+#4. Graph using R. It uses base graphics, so should be compatible with many versions of R.
+Rscript Graph_Effectors.R
+

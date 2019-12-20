@@ -1,0 +1,65 @@
+#!/bin/Rscript
+
+##################################################
+#
+# Copyright Michael Mansfield 2019
+#
+# Like the other scripts included in this repo,
+# these were not intended to be used by anyone but
+# Mike Mansfield - so please realize your mileage
+# may vary. :)
+#
+##################################################
+
+start_stop_locations <- read.delim('Alignment-Subset.tsv')
+
+#When the file is first opened, the Colour column is treated as a factor. So we wil reorder the table according to this factor, and second by sizes.
+#This order is not precisely the same as the one used in figure 2, but it is the same data and gives the same impression.
+
+#Reorder colour factor levels
+start_stop_locations$Colour <- factor(start_stop_locations$Colour, levels = c('#E6194B','#3CB44B','#F58231','#911EB4','#F032E6','#4363D8','#FFE119','#42D4F4','#BFEF45','#d3d3d3'))
+
+#Reorder start-stop table by the reordered factor, and then by size of alignment
+start_stop_locations <- start_stop_locations[order(start_stop_locations$Colour, start_stop_locations$Query_End-start_stop_locations$Query_Start, decreasing=T),]
+
+pdf('Figure-2.pdf')
+plot( c(min(start_stop_locations[,7])+803,max(start_stop_locations[,8])+803), y=c(1,nrow(start_stop_locations)), type='n', main='TcdB PSI-BLAST alignment start-stop sites', xlab='Position on TcdB', ylab='Sequence')
+
+for(i in seq(nrow(start_stop_locations))){
+	rect(xleft=start_stop_locations[i,7]+803, xright=start_stop_locations[i,8]+803, ybottom=i, ytop=i+1, col=as.character(start_stop_locations[i,22]), border=NA)
+}
+
+
+spectral <- c("#A74B4B","#d44d35","#ed820a","#f7b347","#fcde85","#fefdbe","#baeeae","#61d4af","#00b1b5","#0084b3","#584b9f")
+
+ConRegionNoNA <- read.delim('Conservation.tsv')
+
+par(mfrow=c(3,1))
+
+#Start and stop site density plot
+plot( x=c(min(start_stop_locations$Query_Start)+803, max(start_stop_locations$Query_End)+803), y=c(0,0.05), type='n', ylab='Density', xlab='Position of match to TcdB')
+polygon(density(start_stop_locations$Query_Start+803), col='lightblue')
+polygon(density(start_stop_locations$Query_End+803), col='pink')
+
+#Conservation (from Consurf scores)
+plot( smooth.spline(ConRegionNoNA$Score ~ ConRegionNoNA$Pos2), type='n', ylim=c(3,-2), ylab='Conservation', xlab='Position on TcdA', xaxt='none')
+rect( xleft=957, xright=1019, ybottom=-2.5, ytop=3.5, col=adjustcolor(colorRampPalette(spectral)(700)[round(mean( (957-813):(1019-813) ))],0.5) )
+rect( xleft=1029, xright=1078, ybottom=-2.5, ytop=3.5, col=adjustcolor(colorRampPalette(spectral)(700)[round(mean( (1029-813):(1019-813) ))],0.5) )
+rect( xleft=1090, xright=1110, ybottom=-2.5, ytop=3.5, col=adjustcolor(colorRampPalette(spectral)(700)[round(mean( (1090-813):(1110-813) ))],0.5) )
+lines( smooth.spline(ConRegionNoNA$Score ~ ConRegionNoNA$Pos2))
+abline(h=0, lty=2, lwd=0.5, col='#595959', ylim=c(-1.5,2))
+points( smooth.spline(ConRegionNoNA$Score ~ ConRegionNoNA$Pos2), pch=21, bg=colorRampPalette(spectral)(700)[15:839], cex=2)
+axis(side=1, at=seq(800,1400, by=50))
+
+# TMHMM probabilities (from TMHMM2.0)
+plot(ylab='TM Helix Propensity', ConRegionNoNA$Pos2, ConRegionNoNA$TMHMM.Mean, type='n', ylim=c(-0.1, 1.1), xaxt='none', xlab='Position on TcdA')
+rect( xleft=957, xright=1019, ybottom=-2.5, ytop=3.5, col=adjustcolor(colorRampPalette(spectral)(700)[round(mean( (957-813):(1019-813) ))],0.5) )
+rect( xleft=1029, xright=1078, ybottom=-2.5, ytop=3.5, col=adjustcolor(colorRampPalette(spectral)(700)[round(mean( (1029-813):(1019-813) ))],0.5) )
+rect( xleft=1090, xright=1110, ybottom=-2.5, ytop=3.5, col=adjustcolor(colorRampPalette(spectral)(700)[round(mean( (1090-813):(1110-813) ))],0.5) )
+polygon( x=c(ConRegionNoNA$Pos2,rev(ConRegionNoNA$Pos2)), y=c( ConRegionNoNA$TMHMM.Mean+ConRegionNoNA$TMHMM.SD, rev(ConRegionNoNA$TMHMM.Mean-ConRegionNoNA$TMHMM.SD)), col="#d9d9d9", border=T)
+lines( ConRegionNoNA$Pos2, ConRegionNoNA$TMHMM.Mean, lwd=1.5)
+axis(side=1, at=seq(800,1400, by=50))
+
+dev.off()
+
+
